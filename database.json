@@ -1,0 +1,11 @@
+{
+  "packages": {
+    "DEMOHWID2026": {
+      "hwid": "DEMOHWID2026",
+      "gameName": "Counter-Strike 2",
+      "version": "1.0.4",
+      "payload": "[HWID:DEMOHWID2026]\nAtukEnvelopeDummyBase64PayloadContentForDemonstrationPurposeOnly==",
+      "uploadedAt": "2026-06-01T20:00:00Z"
+    }
+  }
+}
