@@ -259,7 +259,7 @@ app.get('/', (req, res) => {
           <td class="game-cell">${pkg.gameName}</td>
           <td><span class="badge-version">v${pkg.version}</span></td>
           <td>
-            <button class="delete-btn" onclick="deletePackage('${pkg.hwid}')">🗑 Delete</button>
+            <button type="button" class="delete-btn" onclick="deletePackage('${pkg.hwid}')">🗑 Delete</button>
           </td>
         </tr>
       `;
@@ -583,8 +583,8 @@ app.get('/', (req, res) => {
         
         <!-- Tab Selectors -->
         <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-          <button id="tabRawBtn" class="submit-btn" style="background: var(--accent); color: #000; flex: 1; font-size: 12px; padding: 8px;" onclick="switchTab('raw')">🎮 Raw LUA + Manifests</button>
-          <button id="tabEncBtn" class="submit-btn" style="background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); flex: 1; font-size: 12px; padding: 8px; box-shadow: none;" onclick="switchTab('enc')">🔒 Pre-Encrypted Payload</button>
+          <button type="button" id="tabRawBtn" class="submit-btn" style="background: var(--accent); color: #000; flex: 1; font-size: 12px; padding: 8px;" onclick="switchTab('raw')">🎮 Raw LUA + Manifests</button>
+          <button type="button" id="tabEncBtn" class="submit-btn" style="background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); flex: 1; font-size: 12px; padding: 8px; box-shadow: none;" onclick="switchTab('enc')">🔒 Pre-Encrypted Payload</button>
         </div>
 
         <!-- Mode A: RAW FILE COMPILER AND UPLOADER -->
