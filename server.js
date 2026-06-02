@@ -49,14 +49,17 @@ function writeDb(data) {
 app.post('/api/check', (req, res) => {
   const { hwid } = req.body;
   if (!hwid) {
+    console.log('[!] Check failed: hwid is missing in request body');
     return res.status(400).json({ error: 'hwid is required' });
   }
 
   const cleanHwid = hwid.replace(/-/g, '').trim().toUpperCase();
+  console.log(`[*] Received UPDATE CHECK request from HWID: ${cleanHwid}`);
   const db = readDb();
   const pkg = db.packages[cleanHwid];
 
   if (pkg) {
+    console.log(`[+] Found update package for HWID: ${cleanHwid} -> Game: "${pkg.gameName}" (v${pkg.version})`);
     return res.json({
       updateAvailable: true,
       gameName: pkg.gameName,
@@ -64,6 +67,7 @@ app.post('/api/check', (req, res) => {
     });
   }
 
+  console.log(`[-] No updates configured for HWID: ${cleanHwid}`);
   return res.json({
     updateAvailable: false,
     gameName: '',
@@ -75,20 +79,24 @@ app.post('/api/check', (req, res) => {
 app.post('/api/download', (req, res) => {
   const { hwid } = req.body;
   if (!hwid) {
+    console.log('[!] Download failed: hwid is missing in request body');
     return res.status(400).json({ error: 'hwid is required' });
   }
 
   const cleanHwid = hwid.replace(/-/g, '').trim().toUpperCase();
+  console.log(`[*] Received DOWNLOAD PAYLOAD request from HWID: ${cleanHwid}`);
   const db = readDb();
   const pkg = db.packages[cleanHwid];
 
   if (pkg) {
+    console.log(`[+] Transferring encrypted game package envelope to HWID: ${cleanHwid}`);
     return res.json({
       success: true,
       payload: pkg.payload
     });
   }
 
+  console.log(`[-] Payload not found for HWID: ${cleanHwid}`);
   return res.status(404).json({
     success: false,
     error: 'No package found for this HWID'
@@ -125,10 +133,12 @@ function compressGzipToBase64(buffer) {
 app.post('/api/upload', (req, res) => {
   const { hwid, gameName, version, payload } = req.body;
   if (!hwid || !gameName || !version || !payload) {
+    console.log('[!] Pre-encrypted upload failed: missing required fields');
     return res.status(400).json({ error: 'All fields (hwid, gameName, version, payload) are required' });
   }
 
   const cleanHwid = hwid.replace(/-/g, '').trim().toUpperCase();
+  console.log(`[*] Received PRE-ENCRYPTED package upload for HWID: ${cleanHwid}`);
   const db = readDb();
   
   db.packages[cleanHwid] = {
@@ -140,6 +150,7 @@ app.post('/api/upload', (req, res) => {
   };
 
   writeDb(db);
+  console.log(`[+] Pre-encrypted package deployed successfully for HWID: ${cleanHwid} (Game: "${gameName}")`);
   return res.json({ success: true, message: 'Package uploaded successfully!' });
 });
 
@@ -151,10 +162,12 @@ app.post('/api/upload-raw', upload.fields([
   try {
     const { hwid, gameName, version, appId } = req.body;
     if (!hwid || !gameName || !version || !appId) {
+      console.log('[!] Raw upload failed: missing required metadata fields');
       return res.status(400).json({ error: 'Client HWID, Game Name, Version, and Steam AppID are all required.' });
     }
 
     const cleanHwid = hwid.replace(/-/g, '').trim().toUpperCase();
+    console.log(`[*] Starting direct LUA & Manifest compilation for HWID: ${cleanHwid}`);
 
     // 1. Pack and compress LUA
     let luaPart = '';
@@ -163,14 +176,18 @@ app.post('/api/upload-raw', upload.fields([
       const compressedBase64 = compressGzipToBase64(file.buffer);
       const tag = `---LUA_START:${file.originalname}---`;
       luaPart = `${tag}\n${compressedBase64}\n---LUA_END---`;
+      console.log(`   -> Compressed LUA file: "${file.originalname}" (${file.buffer.length} bytes raw)`);
     }
 
     // 2. Pack and compress manifests
     let manifestsPart = '';
+    let manifestCount = 0;
     if (req.files && req.files.manifestFiles && req.files.manifestFiles.length > 0) {
       req.files.manifestFiles.forEach(file => {
         const compressedBase64 = compressGzipToBase64(file.buffer);
         manifestsPart += `---MANIFEST_START:${file.originalname}---\n${compressedBase64}\n---MANIFEST_END---\n`;
+        console.log(`   -> Compressed Manifest file: "${file.originalname}" (${file.buffer.length} bytes raw)`);
+        manifestCount++;
       });
     }
 
@@ -180,6 +197,7 @@ app.post('/api/upload-raw', upload.fields([
     // 4. Encrypt using custom envelope AES cipher
     const encryptedBlock = encryptEnvelope(assembledText);
     if (!encryptedBlock) {
+      console.log('[!] Encryption of envelope failed!');
       return res.status(500).json({ error: 'Failed to encrypt the package envelope.' });
     }
 
@@ -194,6 +212,7 @@ app.post('/api/upload-raw', upload.fields([
     };
     writeDb(db);
 
+    console.log(`[+] Compiled and deployed raw package successfully for HWID: ${cleanHwid} (AppID: ${appId}, ${manifestCount} manifest(s) packed)`);
     return res.json({ success: true, message: 'Package compiled and deployed to client successfully!' });
   } catch (err) {
     console.error('Raw compile and upload error:', err);
