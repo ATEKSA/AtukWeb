@@ -235,6 +235,22 @@ app.delete('/api/packages/:hwid', (req, res) => {
   return res.status(404).json({ success: false, error: 'Package not found' });
 });
 
+// Export Database
+app.get('/api/export-db', (req, res) => {
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename=database.json');
+      return fs.createReadStream(DB_PATH).pipe(res);
+    } else {
+      return res.status(404).json({ success: false, error: 'Database file not found' });
+    }
+  } catch (err) {
+    console.error('Error exporting database:', err);
+    return res.status(500).json({ error: 'Internal server error during export' });
+  }
+});
+
 
 // --- ADMIN WEB INTERFACE DASHBOARD (Cyberpunk Theme) ---
 app.get('/', (req, res) => {
@@ -558,7 +574,10 @@ app.get('/', (req, res) => {
     <div class="grid">
       <!-- Active Packages Card -->
       <div class="card">
-        <div class="card-title">Cloud Packages Distribution</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px;">
+          <div class="card-title" style="margin-bottom: 0; border: none; padding: 0;">Cloud Packages Distribution</div>
+          <button type="button" class="submit-btn" style="width: auto; font-size: 11px; padding: 6px 12px; margin: 0; box-shadow: none;" onclick="window.location.href='/api/export-db'">💾 Export database.json</button>
+        </div>
         <div style="overflow-x: auto;">
           <table>
             <thead>
